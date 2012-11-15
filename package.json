@@ -6,6 +6,7 @@
   "dependencies": {
       "ntwitter":"0.5.0"
     , "express": "3.0.x"
+    , "faye": "0.8.6"
   },
   "devDependencies": {},
   "engines": {

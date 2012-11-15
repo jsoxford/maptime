@@ -1,5 +1,6 @@
 var ntwitter = require('ntwitter'),
-	express = require('express');
+	express = require('express'),
+	faye = require('faye');
 
 
 // set up nTwitter with the api configuration in ./config.js
@@ -29,11 +30,16 @@ var config = require('./config.js'),
 var filterParams = {locations:'-10.371,48.812,2.192,60.892'}; // UK
 
 
-// usually, you'd access `stream` within the callback context, but 
-// for the sake of readability later on - we're relying on the callback
-// being called syncronously (which nTwitter does)
+
+/*
+	Start the stream
+*/
 var stream;
 twit.stream('statuses/filter', filterParams, function(_stream) {
+	// usually, you'd access `stream` within the callback context, but 
+	// for the sake of readability later on - we're relying on the callback
+	// being called syncronously (which nTwitter does) and will add
+	// the callbacks further down
 	stream = _stream;
 });
 
@@ -51,9 +57,32 @@ stream.on('data', function(data){
 	static files in the ./public directory
 */
 var app = express();
-
 app.use(express.static(__dirname + '/public'));
 
+
+/*
+	Add Faye - a publish/subscribe messaging library to allow
+	communication with the browser
+*/
+var bayeux = new faye.NodeAdapter({mount: '/faye', timeout: 45});
+bayeux.attach(app);
+
+
+/*
+	When a tweet comes through with geodata, publish it to the 
+	browser over the /tweet channel
+*/
+stream.on('data', function(data){
+	if(data.geo)
+		bayeux.getClient()
+			.publish('/tweet', {
+				geo: data.geo,
+				text: data.text
+			});
+});
+
+
+// start the app listening on port 3000
 app.listen(3000);
 
 
