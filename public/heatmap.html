@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>maptime</title>
+        <style type="text/css">
+        	html, body, #map{
+        		width:100%;height:100%;margin:0;
+        	}
+        </style>
+		<script type="text/javascript" src="/faye.js"></script>
+		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=false"></script>
+		<script type="text/javascript">
+			var client = new Faye.Client('/faye');
+
+			function initialize() {
+
+				var mapOptions = {
+					center: new google.maps.LatLng(54, -4),
+					zoom: 6,
+					mapTypeId: google.maps.MapTypeId.TERRAIN
+				};
+				var map = new google.maps.Map(document.getElementById("map"),mapOptions);
+
+				var heatmap = new google.maps.visualization.HeatmapLayer({
+				  data: [],
+				  map:map
+				});
+
+				client.subscribe('/tweet', function(message) {
+					if(message.geo && message.geo.coordinates){
+						placeMarker(message.geo.coordinates);
+					}
+				});
+
+				function placeMarker(coords){
+					var latlng = new google.maps.LatLng(coords[0],coords[1]);
+					heatmap.getData().push(latlng);
+				}
+
+			}
+		</script>
+    </head>
+    <body onload="initialize()">
+        <div id="map" style="height:100%;width:100%"></div>
+    </body>
+</html>
