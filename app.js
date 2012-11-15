@@ -1,6 +1,10 @@
-var twitter = require('ntwitter'),
-	config = require('./config.js'),
-	twit = new twitter(config);
+var ntwitter = require('ntwitter'),
+	express = require('express');
+
+
+// set up nTwitter with the api configuration in ./config.js
+var config = require('./config.js'),
+	twit = new ntwitter(config);
 
 
 /*
@@ -15,27 +19,45 @@ var twitter = require('ntwitter'),
 	San Francisco + New York
 		{locations:'-122.75,36.8,-121.75,37.8,-74,40,-73,41'}
 
-	Any Geotagged tweet OR one mentioning pizza
+	Any Geotagged tweet
 		{locations:'-180,-90,180,90'}
 
 	Tweets mentioning pizza or burger
 		{track:'pizza,burger'}
 
 */
-
 var filterParams = {locations:'-10.371,48.812,2.192,60.892'}; // UK
 
-twit.stream('statuses/filter', filterParams, function(stream) {
-	stream.on('data', tweetHandler);
+
+// usually, you'd access `stream` within the callback context, but 
+// for the sake of readability later on - we're relying on the callback
+// being called syncronously (which nTwitter does)
+var stream;
+twit.stream('statuses/filter', filterParams, function(_stream) {
+	stream = _stream;
 });
 
 
-function tweetHandler(data){
-
+/*
+	Output every tweet to the console
+*/
+stream.on('data', function(data){
 	console.log(data.text);
+});
 
-	if(data.geo){
-		console.log("\u001b[31m\t^^ ", data.geo, '\u001b[0m');
-	}
 
-}
+/*
+	Create an express webapp.  This will allow us to serve
+	static files in the ./public directory
+*/
+var app = express();
+
+app.use(express.static(__dirname + '/public'));
+
+app.listen(3000);
+
+
+
+
+
+
