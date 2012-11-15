@@ -1,6 +1,7 @@
 var ntwitter = require('ntwitter'),
 	express = require('express'),
-	faye = require('faye');
+	faye = require('faye'),
+	http = require('http');
 
 
 // set up nTwitter with the api configuration in ./config.js
@@ -59,13 +60,14 @@ stream.on('data', function(data){
 var app = express();
 app.use(express.static(__dirname + '/public'));
 
-
 /*
 	Add Faye - a publish/subscribe messaging library to allow
 	communication with the browser
 */
-var bayeux = new faye.NodeAdapter({mount: '/faye', timeout: 45});
-bayeux.attach(app);
+var bayeux = new faye.NodeAdapter({
+	mount: '/faye', 
+	timeout: 45
+});
 
 
 /*
@@ -82,9 +84,10 @@ stream.on('data', function(data){
 });
 
 
-// start the app listening on port 3000
-app.listen(3000);
-
+// start the app listening on port 3000 with faye attached
+var server = http.createServer(app);
+bayeux.attach(server);
+server.listen(3000);
 
 
 
